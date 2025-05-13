@@ -12,7 +12,7 @@ ACCOUNT_NAME = "admin wallet"
 def main():
     results = []
 
-    with open("data/airdropData.txt", "r") as f:
+    with open("data/data.txt", "r") as f:
         transfer_data = f.read().splitlines()
 
     transfer = Transfer(account_name=ACCOUNT_NAME, private_key=PRIVATE_KEY)
