@@ -12,6 +12,7 @@ from ..config.constants import (
     GAS_LIMIT_MULTIPLIER,
     GAS_PRICE_MULTIPLIER,
 )
+import pyuseragents
 
 
 class EvmClient:
@@ -24,16 +25,17 @@ class EvmClient:
         user_agent: str = None,
         proxy: str = None,
     ) -> Self:
-
-        self.account_name = account_name
+        self.account_name = account_name if account_name else "unnamed account"
         self.private_key = private_key
-        self.account = Account.from_key(self.private_key)
-        self.address = Web3.to_checksum_address(self.account.address)
+        self.account = Account.from_key(self.private_key) if private_key else None
+        self.address = (
+            Web3.to_checksum_address(self.account.address) if private_key else None
+        )
         self.network = network
         self.rpc = self.network.rpc_list[0]
-        self.user_agent = user_agent
+        self.user_agent = user_agent if user_agent else pyuseragents.random()
         self.chain_id = self.network.chain_id
-        self.proxy = proxy
+        self.proxy = proxy if proxy else None
 
         self.request_kwargs = {
             "headers": {
@@ -72,6 +74,7 @@ class EvmClient:
         eip_1559: bool = True,
         estimate_gas: bool = True,
         is_for_contract_tx: bool = False,
+        full_balance: bool = False,
     ) -> dict:
 
         if is_for_contract_tx:
@@ -118,7 +121,34 @@ class EvmClient:
             except Exception:
                 tx_params["gas"] = default_gas
 
+        if full_balance:
+            if tx_params.get("gas", None) is not None:
+                balance = self.get_balance()
+
+                if eip_1559:
+                    del tx_params["maxFeePerGas"]
+                    del tx_params["maxPriorityFeePerGas"]
+                    tx_params["gasPrice"] = int(
+                        self.w3.eth.gas_price * GAS_PRICE_MULTIPLIER
+                    )
+                    tx_params["gas"] = int(
+                        self.w3.eth.estimate_gas(transaction=tx_params)
+                        * GAS_AMT_MULTIPLIER
+                    )
+
+                tx_params["value"] = int(
+                    balance - (tx_params["gas"] * tx_params["gasPrice"])
+                )
+
         return tx_params
+
+    def get_balance(self):
+        try:
+            return int(self.w3.eth.get_balance(self.address))
+        except Exception as e:
+            logger.warning(f"{self.address} | Error getting balance: {str(e)}")
+            time.sleep(5)
+            return self.get_balance()
 
     def send_tx(self, signed_tx: SignedTx) -> str | HexStr:
         timeout = 180

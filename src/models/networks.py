@@ -115,6 +115,18 @@ class Networks:
         scanner="https://testnet.monadexplorer.com",
         token="MON",
     )
+    Binance = Network(
+        name="Binance Smart Chain",
+        chain_id=56,
+        rpc_list=[
+            "https://1rpc.io/bnb",
+            "https://bsc-pokt.nodies.app",
+            "https://bsc.meowrpc.com",
+        ],
+        scanner="https://bscscan.com",
+        eip1559_support=True,
+        token="BNB",
+    )
 
     NetworkList = [
         Ethereum,
@@ -126,6 +138,7 @@ class Networks:
         Scroll,
         Bitlayer,
         Monad,
+        Binance,
     ]
 
     @staticmethod
@@ -139,6 +152,7 @@ class Networks:
             "Zora": Networks.Zora,
             "Scroll": Networks.Scroll,
             "Bitlayer": Networks.Bitlayer,
+            "Binance Smart Chain": Networks.Binance,
         }.get(name, None)
 
     @staticmethod
@@ -161,6 +175,7 @@ class Networks:
     def get_network_by_chain_id(chain_id: int) -> Network | None:
         return {
             1: Networks.Ethereum,
+            56: Networks.Binance,
             42161: Networks.Arbitrum,
             8453: Networks.Base,
             10: Networks.Optimism,
