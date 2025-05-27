@@ -3,6 +3,7 @@ from src.utils.helpers.helpers import sleeping
 from src.actions.transfer import Transfer
 from dotenv import load_dotenv
 from loguru import logger
+from src.models.networks import Networks
 
 load_dotenv()
 
@@ -40,7 +41,7 @@ def many_to_one():
 
     proxy_cycle = cycle(proxies)
 
-    transfer = Transfer()
+    transfer = Transfer(network=Networks.Binance)
 
     for account_name, private_key in enumerate(private_keys, start=1):
         transfer.update_wallet(account_name, private_key, next(proxy_cycle))

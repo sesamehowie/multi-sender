@@ -1,4 +1,5 @@
 from web3 import Web3
+import random
 import time
 from web3.middleware.geth_poa import geth_poa_middleware
 from typing import Self
@@ -12,6 +13,8 @@ from ..config.constants import (
     GAS_LIMIT_MULTIPLIER,
     GAS_PRICE_MULTIPLIER,
 )
+from ..config.transaction_config import MINIMUM_TRANSFER_REQUIREMENTS
+
 import pyuseragents
 
 
@@ -65,6 +68,26 @@ class EvmClient:
     def get_nonce(self, address: str | ChecksumAddress) -> int:
         return self.w3.eth.get_transaction_count(address)
 
+    def get_new_provider(self):
+        unused_rpcs = []
+        for rpc in self.network.rpc_list:
+            if rpc != self.rpc:
+                unused_rpcs.append(rpc)
+
+        if len(unused_rpcs) > 0:
+            self.rpc = random.choice(unused_rpcs)
+            self.w3 = self.w3 = Web3(
+                Web3.HTTPProvider(
+                    endpoint_uri=self.rpc,
+                    request_kwargs=(
+                        self.request_kwargs if self.proxy and self.user_agent else None
+                    ),
+                )
+            )
+        else:
+            logger.warning(f"RPC error on {self.rpc} and no replacement rpc")
+            time.sleep(60)
+
     def get_tx_params(
         self,
         to_address: str | ChecksumAddress = None,
@@ -76,6 +99,21 @@ class EvmClient:
         is_for_contract_tx: bool = False,
         full_balance: bool = False,
     ) -> dict:
+        balance = self.get_balance()
+
+        if self.network.name in MINIMUM_TRANSFER_REQUIREMENTS.keys():
+            minimum_requirements = MINIMUM_TRANSFER_REQUIREMENTS.get(self.network.name)
+            min_gas, min_gas_price = minimum_requirements.get(
+                "gas"
+            ), minimum_requirements.get("gasPrice")
+            min_network_fee = int(min_gas * min_gas_price)
+
+            if all([item is not None for item in [min_gas, min_gas_price]]):
+                if balance < min_network_fee:
+                    logger.warning(
+                        f"{self.account_name} | {self.address} - Does not meet the minimum balance requirements of {self.network.name}: {float(Web3.from_wei(min_network_fee, 'ether')):.8f} {self.network.token}"
+                    )
+                    return
 
         if is_for_contract_tx:
             return {
@@ -123,7 +161,6 @@ class EvmClient:
 
         if full_balance:
             if tx_params.get("gas", None) is not None:
-                balance = self.get_balance()
 
                 if eip_1559:
                     del tx_params["maxFeePerGas"]
@@ -147,6 +184,7 @@ class EvmClient:
             return int(self.w3.eth.get_balance(self.address))
         except Exception as e:
             logger.warning(f"{self.address} | Error getting balance: {str(e)}")
+            self.get_new_provider()
             time.sleep(5)
             return self.get_balance()
 
@@ -183,8 +221,12 @@ class EvmClient:
 
     def sign_transaction(self, tx_dict: dict) -> SignedTx:
 
-        return self.w3.eth.account.sign_transaction(
-            transaction_dict=tx_dict, private_key=self.private_key
+        return (
+            self.w3.eth.account.sign_transaction(
+                transaction_dict=tx_dict, private_key=self.private_key
+            )
+            if tx_dict
+            else None
         )
 
     def get_gas_price(self):

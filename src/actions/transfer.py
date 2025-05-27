@@ -64,11 +64,11 @@ class Transfer(EvmClient):
 
         if not is_checksum:
             recipient_address = self.w3.to_checksum_address(recipient_address)
-        if not isinstance(amount, float):
+        if amount and not isinstance(amount, float):
             amount = float(amount)
 
         logger.info(
-            f"{self.account_name} | Sending {amount:.4f} {self.network.token} to {recipient_address}"
+            f"{self.account_name} | {self.address} | Sending {round(amount, 4) if amount is not None else 'full balance'} {self.network.token} to {recipient_address}"
         )
 
         if not amount:
@@ -94,6 +94,12 @@ class Transfer(EvmClient):
                 full_balance=True,
             )
             tx_data["gas"] = 25000
+
+        if not tx_data:
+            logger.warning(
+                f"{self.account_name} | {self.address}: Does not have enough {self.network.token} to cover the network fee"
+            )
+            return
 
         signed = self.sign_transaction(tx_dict=tx_data)
 

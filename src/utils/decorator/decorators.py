@@ -15,7 +15,7 @@ def retry_execution(func):
                 logger.warning(f"{func.__name__} - exception: {str(e)}")
                 if "insufficient funds" in str(e):
                     return
-                sleeping(mode=3)
+                sleeping(mode=1)
         else:
             return
 
