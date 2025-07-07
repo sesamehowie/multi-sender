@@ -68,7 +68,7 @@ class Transfer(EvmClient):
             amount = float(amount)
 
         logger.info(
-            f"{self.account_name} | {self.address} | Sending {round(amount, 4) if amount is not None else 'full balance'} {self.network.token} to {recipient_address}"
+            f"{self.account_name} | {self.address} | Sending {round(amount, 6) if amount is not None else 'full balance'} {self.network.token} to {recipient_address}"
         )
 
         if not amount:

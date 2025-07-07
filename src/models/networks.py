@@ -119,9 +119,9 @@ class Networks:
         name="Binance Smart Chain",
         chain_id=56,
         rpc_list=[
-            "https://1rpc.io/bnb",
-            "https://bsc-pokt.nodies.app",
-            "https://bsc.meowrpc.com",
+            "https://muddy-nameless-knowledge.bsc.quiknode.pro/1349fe899f6e712099bfc7c57b0cbfb743701895/",
+            "https://muddy-nameless-knowledge.bsc.quiknode.pro/1349fe899f6e712099bfc7c57b0cbfb743701895/",
+            "https://muddy-nameless-knowledge.bsc.quiknode.pro/1349fe899f6e712099bfc7c57b0cbfb743701895/",
         ],
         scanner="https://bscscan.com",
         eip1559_support=True,

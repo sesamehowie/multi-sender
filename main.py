@@ -93,14 +93,16 @@ def one_to_many():
 
     pending_transfers = transfer_data
     logger.info(f"Processing {len(pending_transfers)} pending transfers")
-    transfer = Transfer(account_name=ACCOUNT_NAME, private_key=PRIVATE_KEY)
+    transfer = Transfer(
+        account_name=ACCOUNT_NAME, private_key=PRIVATE_KEY, network=Networks.Monad
+    )
 
     results = []
     failed_transfers = []
 
     for i, (address, amount) in enumerate(pending_transfers, 1):
         logger.info(
-            f"Processing {i}/{len(pending_transfers)}: {address} - {amount} MON"
+            f"Processing {i}/{len(pending_transfers)}: {address} - {amount:.6f} {transfer.network.token}"
         )
 
         try:
@@ -118,7 +120,9 @@ def one_to_many():
             error_msg = f"{address} - ERROR - {str(e)}"
             results.append(error_msg)
             failed_transfers.append((address, amount))
-            logger.error(f"{address} - {amount} MON - Exception: {str(e)}")
+            logger.error(
+                f"{address} - {amount} {transfer.network.token} - Exception: {str(e)}"
+            )
 
         if i < len(pending_transfers):
             sleeping(2)
